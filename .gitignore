@@ -1,3 +1,4 @@
 *.txt
 *.xml
 envVariables.py
+*.pyc
