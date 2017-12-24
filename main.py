@@ -1,8 +1,14 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, url_for
 import auth
 import envVariables as eVar
-import plistlib
 import webbrowser
+import ast
+import processing
+
+
+
+itunesXMLFile = 'itunes Music Library.xml'
+playlist = 'Drive'
 
 app = Flask(__name__)
 
@@ -16,27 +22,18 @@ def login():
     tokenData = auth.getAuthTokens()
     #if not accessToken:
         #go back to login page
-    return url_for('convert', tokenData)
+    return redirect(url_for('convert', tokenData=tokenData))
 
 @app.route('/convert')
 def convert():
+    tokenData = ast.literal_eval(request.args.get('tokenData'))
     accessHeader = auth.getAccessHeader(tokenData)
+    itunesSongs = processing.getAppleMusic(itunesXMLFile, playlist)
+    #trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)
+    return processing.getTrackURIs(itunesSongs, accessHeader)
 
-'''
-xmlItunes = "itunes Music Library.xml"
-itunesLib = plistlib.readPlist(xmlItunes)
 
-with open("failure.txt", "w") as fail:
-    with open("success.txt", "w") as success:
-        for track, details in itunesLib['Tracks'].items():
-            try:
-                if (details.get("Kind") == "Apple Music AAC audio file"):
-                    success.write(details.get("Name").encode("ascii", "ignore") + " , " + details.get("Artist").encode("ascii", "ignore") + "\n")
-            except:
-                fail.write(details.get("Name").encode("ascii", "ignore") + " , " + details.get("Artist").encode("ascii", "ignore") + "\n")
-                print "something went wrong with the iTunes library XML parsing"
-'''
 
 if __name__ == '__main__':
     webbrowser.open('http://127.0.0.1:8080/')
-    app.run(debug=True,port=8080)
+    app.run(debug=False,port=8080)

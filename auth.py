@@ -13,7 +13,6 @@ clientSecret = envVariables.clientSecret
 #URLS
 spotifyAuthURL = 'https://accounts.spotify.com/authorize'
 spotifyTokenURL = 'https://accounts.spotify.com/api/token'
-spotifyAPIURL = "https://api.spotify.com/v1"
 
 #payload parameters
 redirectURI = 'http://127.0.0.1:8080/login'
@@ -22,6 +21,7 @@ scope = 'playlist-modify-public'
 #header for requesting tokens
 authHeader = {'Authorization':
         'Basic {}'.format(base64.b64encode('{}:{}'.format(clientID, clientSecret)))}
+        #or {'Authorization': 'Basic {}'.format(('{}:{}'.format(clientID, clientSecret)).encode('base64', 'strict'))}
 
 
 #returns authentication URL
