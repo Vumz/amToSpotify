@@ -29,8 +29,8 @@ def convert():
     tokenData = ast.literal_eval(request.args.get('tokenData'))
     accessHeader = auth.getAccessHeader(tokenData)
     itunesSongs = processing.getAppleMusic(itunesXMLFile, playlist)
-    #trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)
-    return processing.getTrackURIs(itunesSongs, accessHeader)
+    trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)
+    return "success"
 
 
 
