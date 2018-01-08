@@ -10,6 +10,7 @@ import time
 
 spotifyAPIURL = "https://api.spotify.com/v1"
 
+
 #returns dictionary of songs(key) and artists(value)
 def getAppleMusic(xmlItunes, playlist):
     itunesLib = plistlib.readPlist(xmlItunes)
@@ -23,7 +24,7 @@ def getAppleMusic(xmlItunes, playlist):
             try:
                 songs[(itunesLib['Tracks'][trackID]['Name']).encode('utf-8')] = (itunesLib['Tracks'][trackID]['Artist']).encode('utf-8')
             except:
-                fail.write(itunesLib['Tracks'][trackID]['Name'] + "\n")
+                fail.write(itunesLib['Tracks'][trackID]['Name'] + '\n')
     return songs
 
 #returns a list of the Spotify trackIDs from the songs dictionary passed in
@@ -35,34 +36,67 @@ def getTrackURIs(songs, accessHeader):
     trackList = []
     with open('failure.txt', 'a') as fail:
         for song, artist in songs.iteritems():
-            trackPayload['q'] = '{} artist:{}'.format(song, artist)
-            getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
-            trackData = json.loads(getResponse.text)
-            try:
-                #checks if the track can be found by exluding the features
-                if (trackData['tracks']['items'] == []):
-                    songF = getNoFeat(song)
-                    if songF:
-                        trackPayload['q'] = '{} artist:{}'.format(songF, artist)
-                        getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
-                        trackData = json.loads(getResponse.text)
-                #checks if the track can be found with a single artist
-                if (trackData['tracks']['items'] == []):
-                    artistS = getSingleArtist(artist)
-                    if artistS:
-                        trackPayload['q'] = '{} artist:{}'.format(song, artistS)
-                        getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
-                        trackData = json.loads(getResponse.text)
-                #if getResponse.status_code == 429:
-                    #time.sleep(retry after seconds)
-                    # need to handle when the API rate limit is reached^
-                #adds the trackID to trackList
-                trackList.append(trackData['tracks']['items'][0]['uri'])
-            except:
-                print(trackData)
-                fail.write(song + "-" + artist + "\n")
+            retries = 2
+            while retries > 0:
+                try:
+                    #requests for track details from Spotify API
+                    trackPayload['q'] = '{} artist:{}'.format(song, artist)
+                    getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
+                    trackData = json.loads(getResponse.text)
+                    #checks if the track can be found by exluding the features
+                    if (trackData['tracks']['items'] == []):
+                        songF = getNoFeat(song)
+                        if songF is not None:
+                            trackPayload['q'] = '{} artist:{}'.format(songF, artist)
+                            getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
+                            trackData = json.loads(getResponse.text)
+                    #checks if the track can be found with a single artist
+                    if (trackData['tracks']['items'] == []):
+                        artistS = getSingleArtist(artist)
+                        if artistS is not None:
+                            trackPayload['q'] = '{} artist:{}'.format(song, artistS)
+                            getResponse = requests.get(trackEndpoint, params=trackPayload, headers=accessHeader)
+                            trackData = json.loads(getResponse.text)
+                    #if getResponse.status_code == 429:
+                        #time.sleep(retry after seconds)
+                        # need to handle when the API rate limit is reached^
+                    #adds the trackID to trackList
+                    trackList.append(trackData['tracks']['items'][0]['uri'])
+                    retries = 0
+                except:
+                    print(trackData)
+                    retries -= 1
+                    #retry track details request in case there was a bad gateway error
+                    if retries > 0:
+                        continue
+                    #write to track to failure file if the track cannot be found
+                    fail.write(song + "-" + artist + "\n")
     return trackList
 
+def addToPlaylist(trackIDs, playlist, accessHeader):
+    userPEndpoint = "{}/me/playlists".format(spotifyAPIURL)
+    getResponse = requests.get(userPEndpoint, headers=accessHeader)
+    playlistData = json.loads(getResponse.text)
+    try:
+        itemNum = [pos for pos in xrange(len(playlistData['items']))
+                            if (playlist.lower() == (playlistData['items'][pos]['name']).lower())][0]
+        playlistID = playlistData['items'][itemNum]['id']
+        userID = playlistData['items'][itemNum]['owner']['id']
+    except:
+        print("something went wrong, make sure the playlist you entered is existing in your account")
+        return False
+    playlistEndpoint = "{}/users/{}/playlists/{}/tracks".format(spotifyAPIURL, userID, playlistID)
+    tempHeader = {'Authorization': accessHeader['Authorization'],
+                    'Content-Type': 'application/json'}
+    lastI = 0
+    for i in xrange(0, len(trackIDs), 100):
+        playlistPayload = {'uris': trackIDs[lastI:i]}
+        lastI = i
+        postResponse = requests.post(playlistEndpoint, headers=tempHeader, data=json.dumps(playlistPayload))
+    if ((len(trackIDs) - lastI) > 0):
+        playlistPayload = {'uris': trackIDs[lastI:]}
+        postResponse = requests.post(playlistEndpoint, headers=tempHeader, data=json.dumps(playlistPayload))
+    return True
 
 def getNoFeat(song):
     index = song.find('(feat.')
@@ -81,3 +115,7 @@ def getSingleArtist(artist):
     if(index > -1):
         return artist[:index]
     return None
+
+    {"href": "https://api.spotify.com/v1/users/wizzler/playlists","items": [ {"collaborative": False,"external_urls": {"spotify": "http://open.spotify.com/user/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c"},"href": "https://api.spotify.com/v1/users/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c","id": "53Y8wT46QIMz5H4WQ8O22c","images" : [ ],"name": "Wizzlers Big Playlist","owner": {"external_urls": {"spotify": "http://open.spotify.com/user/wizzler"},"href": "https://api.spotify.com/v1/users/wizzler","id": "wizzler","type": "user","uri": "spotify:user:wizzler"},"public": True,"snapshot_id" : "bNLWdmhh+HDsbHzhckXeDC0uyKyg4FjPI/KEsKjAE526usnz2LxwgyBoMShVL+z+","tracks": {"href": "https://api.spotify.com/v1/users/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c/tracks","total": 30},"type": "playlist","uri": "spotify:user:wizzler:playlist:53Y8wT46QIMz5H4WQ8O22c"}, {"collaborative": False,"external_urls": {"spotify": "http://open.spotify.com/user/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju"},"href": "https://api.spotify.com/v1/users/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju","id": "1AVZz0mBuGbCEoNRQdYQju","images" : [ ],"name": "Another Playlist","owner": {"external_urls": {"spotify": "http://open.spotify.com/user/wizzlersmate"},"href": "https://api.spotify.com/v1/users/wizzlersmate","id": "wizzlersmate","type": "user","uri": "spotify:user:wizzlersmate"},"public": True,"snapshot_id" : "Y0qg/IT5T02DKpw4uQKc/9RUrqQJ07hbTKyEeDRPOo9LU0g0icBrIXwVkHfQZ/aD","tracks": {"href": "https://api.spotify.com/v1/users/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju/tracks","total": 58},"type": "playlist","uri": "spotify:user:wizzlersmate:playlist:1AVZz0mBuGbCEoNRQdYQju"} ],"limit": 9,"next": None,"offset": 0,"previous": None,"total": 9}
+
+

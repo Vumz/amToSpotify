@@ -30,9 +30,9 @@ def convert():
     accessHeader = auth.getAccessHeader(tokenData)
     itunesSongs = processing.getAppleMusic(itunesXMLFile, playlist)
     trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)
-    return "success"
-
-
+    if processing.addToPlaylist(trackURIs, playlist, accessHeader):
+        return "Success"
+    return "Failed"
 
 if __name__ == '__main__':
     webbrowser.open('http://127.0.0.1:8080/')

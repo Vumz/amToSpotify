@@ -16,7 +16,7 @@ spotifyTokenURL = 'https://accounts.spotify.com/api/token'
 
 #payload parameters
 redirectURI = 'http://127.0.0.1:8080/login'
-scope = 'playlist-modify-public'
+scope = 'playlist-modify-private playlist-modify-public'
 
 #header for requesting tokens
 authHeader = {'Authorization':
