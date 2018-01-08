@@ -14,19 +14,24 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+    #directs the user to the spotify authentication url to request permission
     authURL = auth.getAuthURL()
     return redirect(authURL)
 
 @app.route('/login')
 def login():
+    #gets token data from the authentication callback
     tokenData = auth.getAuthTokens()
-    #if not accessToken:
-        #go back to login page
     return redirect(url_for('convert', tokenData=tokenData))
 
 @app.route('/convert')
 def convert():
-    tokenData = ast.literal_eval(request.args.get('tokenData'))
+    try:
+        #get the tokenData from the url
+        tokenData = ast.literal_eval(request.args.get('tokenData'))
+    except ValueError as v:
+        #if user cancels spotify authentication, return them to the authentication page again
+        return redirect('http://127.0.0.1:8080/')
     accessHeader = auth.getAccessHeader(tokenData)
     itunesSongs = processing.getAppleMusic(itunesXMLFile, playlist)
     trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)

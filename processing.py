@@ -73,11 +73,14 @@ def getTrackURIs(songs, accessHeader):
                     fail.write(song + "-" + artist + "\n")
     return trackList
 
+#returns True if the the tracks were added to the user's playlist, False if not
 def addToPlaylist(trackIDs, playlist, accessHeader):
+    #gets user's playlists data
     userPEndpoint = "{}/me/playlists".format(spotifyAPIURL)
     getResponse = requests.get(userPEndpoint, headers=accessHeader)
     playlistData = json.loads(getResponse.text)
     try:
+        #gets the playlist ID (of the playlist the user entered) and Owner ID
         itemNum = [pos for pos in xrange(len(playlistData['items']))
                             if (playlist.lower() == (playlistData['items'][pos]['name']).lower())][0]
         playlistID = playlistData['items'][itemNum]['id']
@@ -89,15 +92,18 @@ def addToPlaylist(trackIDs, playlist, accessHeader):
     tempHeader = {'Authorization': accessHeader['Authorization'],
                     'Content-Type': 'application/json'}
     lastI = 0
+    #adds the tracks with valid IDs from the itunes xml to the user's selected playlist (in increments of a 100)
     for i in xrange(0, len(trackIDs), 100):
         playlistPayload = {'uris': trackIDs[lastI:i]}
         lastI = i
         postResponse = requests.post(playlistEndpoint, headers=tempHeader, data=json.dumps(playlistPayload))
+    #adds the remaining tracks to the user's selected playlist
     if ((len(trackIDs) - lastI) > 0):
         playlistPayload = {'uris': trackIDs[lastI:]}
         postResponse = requests.post(playlistEndpoint, headers=tempHeader, data=json.dumps(playlistPayload))
     return True
 
+#returns the string of the track without the feature section
 def getNoFeat(song):
     index = song.find('(feat.')
     if(index > -1):
@@ -107,6 +113,7 @@ def getNoFeat(song):
         return song[:index]
     return None
 
+#returns the string of the first artist
 def getSingleArtist(artist):
     index = artist.find(',')
     if(index > -1):
@@ -116,6 +123,5 @@ def getSingleArtist(artist):
         return artist[:index]
     return None
 
-    {"href": "https://api.spotify.com/v1/users/wizzler/playlists","items": [ {"collaborative": False,"external_urls": {"spotify": "http://open.spotify.com/user/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c"},"href": "https://api.spotify.com/v1/users/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c","id": "53Y8wT46QIMz5H4WQ8O22c","images" : [ ],"name": "Wizzlers Big Playlist","owner": {"external_urls": {"spotify": "http://open.spotify.com/user/wizzler"},"href": "https://api.spotify.com/v1/users/wizzler","id": "wizzler","type": "user","uri": "spotify:user:wizzler"},"public": True,"snapshot_id" : "bNLWdmhh+HDsbHzhckXeDC0uyKyg4FjPI/KEsKjAE526usnz2LxwgyBoMShVL+z+","tracks": {"href": "https://api.spotify.com/v1/users/wizzler/playlists/53Y8wT46QIMz5H4WQ8O22c/tracks","total": 30},"type": "playlist","uri": "spotify:user:wizzler:playlist:53Y8wT46QIMz5H4WQ8O22c"}, {"collaborative": False,"external_urls": {"spotify": "http://open.spotify.com/user/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju"},"href": "https://api.spotify.com/v1/users/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju","id": "1AVZz0mBuGbCEoNRQdYQju","images" : [ ],"name": "Another Playlist","owner": {"external_urls": {"spotify": "http://open.spotify.com/user/wizzlersmate"},"href": "https://api.spotify.com/v1/users/wizzlersmate","id": "wizzlersmate","type": "user","uri": "spotify:user:wizzlersmate"},"public": True,"snapshot_id" : "Y0qg/IT5T02DKpw4uQKc/9RUrqQJ07hbTKyEeDRPOo9LU0g0icBrIXwVkHfQZ/aD","tracks": {"href": "https://api.spotify.com/v1/users/wizzlersmate/playlists/1AVZz0mBuGbCEoNRQdYQju/tracks","total": 58},"type": "playlist","uri": "spotify:user:wizzlersmate:playlist:1AVZz0mBuGbCEoNRQdYQju"} ],"limit": 9,"next": None,"offset": 0,"previous": None,"total": 9}
 
 
