@@ -8,7 +8,8 @@ import processing
 
 
 itunesXMLFile = 'itunes Music Library.xml'
-playlist = 'Drive'
+playlistApple = 'Drive'
+playlistSpotify = 'Drive'
 
 app = Flask(__name__)
 
@@ -33,9 +34,9 @@ def convert():
         #if user cancels spotify authentication, return them to the authentication page again
         return redirect('http://127.0.0.1:8080/')
     accessHeader = auth.getAccessHeader(tokenData)
-    itunesSongs = processing.getAppleMusic(itunesXMLFile, playlist)
+    itunesSongs = processing.getAppleMusic(itunesXMLFile, playlistApple)
     trackURIs = processing.getTrackURIs(itunesSongs, accessHeader)
-    if processing.addToPlaylist(trackURIs, playlist, accessHeader):
+    if processing.addToPlaylist(trackURIs, playlistSpotify, accessHeader):
         return "Success"
     return "Failed"
 
