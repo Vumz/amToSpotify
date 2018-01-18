@@ -35,6 +35,11 @@ playlistApple = 'Drive'
 playlistSpotify = 'Drive'
 ```
 
+To run the program, cd into the project directory and enter the following in terminal
+```python
+python main.py
+```
+
 ## Reporting Issues
 
 If there are any suggestions, issues, or bugs please list them [here](https://github.com/Vumz/amToSpotify/issues).
