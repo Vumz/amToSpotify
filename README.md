@@ -9,6 +9,7 @@ The plan is to further develop and deploy the web app in the near future!
 ## Dependencies
 
 - Python 2
+- Flask
 
 ## Startup
 To get started, clone this repository to your local environment.
